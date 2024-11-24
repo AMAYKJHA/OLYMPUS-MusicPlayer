@@ -1,0 +1,25 @@
+<RCC>
+    <qresource prefix="/images">
+        <file>icons/pause2.png</file>
+        <file>icons/play4.png</file>
+        <file>icons/backward.png</file>
+        <file>icons/forward.png</file>
+        <file>icons/music1.png</file>
+        <file>icons/volume.png</file>
+        <file>icons/close.png</file>
+        <file>icons/delete.png</file>
+        <file>icons/heart.png</file>
+        <file>icons/lock.png</file>
+        <file>icons/loop.png</file>
+        <file>icons/mute.png</file>
+        <file>icons/sequence.png</file>
+        <file>icons/shuffle.png</file>
+        <file>icons/search.png</file>
+        <file>icons/browse.png</file>
+        <file>icons/addtoplaylist.png</file>
+        <file>icons/music.png</file>
+        <file>icons/music.ico</file>
+        <file>icons/3d-audio.png</file>
+        <file>icons/add.png</file>
+    </qresource>
+</RCC>
