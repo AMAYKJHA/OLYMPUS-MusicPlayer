@@ -71,7 +71,7 @@ private:
     int metadata();
 
     void on_searchTextChanged(const QString &);
-    void updateModeLabel();  // Update the mode label based on the current mode
+    void updateModeLabel();  
 
 };
 
