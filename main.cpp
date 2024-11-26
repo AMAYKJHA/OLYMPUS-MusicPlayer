@@ -15,7 +15,7 @@ int main(int argc, char *argv[])
 
     // Initialize SDL and SDL_mixer
     if (init() != 0) {
-        return 1;  // Initialization failed, return early
+        return 1;
     }
 
     w.setWindowIcon(QIcon(":/images/icons/music.ico"));
@@ -23,15 +23,15 @@ int main(int argc, char *argv[])
     w.setFixedSize(800, 600);
     w.show();
 
-    int exitCode = a.exec();  // Run the Qt event loop
+    int exitCode = a.exec();
 
-    cleanup();  // Cleanup SDL and SDL_mixer before exiting the application
+    cleanup();
 
-    return exitCode;  // Return the exit code of the event loop
+    return exitCode;
 }
 
 int init() {
-    // Initialize SDL and SDL_mixer
+    // Initializing SDL and SDL_mixer
     std::cout << "Initializing SDL..." << std::endl;
     if (SDL_Init(SDL_INIT_AUDIO) < 0) {
         std::cerr << "SDL initialization failed: " << SDL_GetError() << std::endl;

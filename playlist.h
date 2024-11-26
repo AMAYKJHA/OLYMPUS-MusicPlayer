@@ -56,7 +56,6 @@ void PlaylistManager::createplaylist(const QString& playlist_name) {
     fs::path fileName = dir / (playlist_name.toStdString() + ".m3u");
     std::ofstream ofile(fileName);
     if (ofile) {
-        // Adding an optional header for m3u files
         ofile << "#EXTM3U\n";
         ofile.close();
         std::cout << "file saved" << std::endl;
@@ -74,27 +73,27 @@ void MainWindow::listPlaylist() {
     QString playlistDir = QDir::homePath() + "/Music/Playlists/";
     fs::path dir(playlistDir.toStdString());
 
-    // Check if the Playlists directory exists
+
     if (!fs::exists(dir)) {
         return;
     }
 
-    // Iterate through the playlist files and add them to the list
+
     for (const auto& entry : fs::directory_iterator(dir)) {
         if (entry.path().extension() == ".m3u") {
             playlistFiles.push_back(entry.path());
         }
     }
 
-    ui->playlistwidget->clear(); // Clear the current list
+    ui->playlistwidget->clear();
 
-    // Add each playlist without the .m3u extension
+
     for (const auto& file : playlistFiles) {
-        // Get the filename and remove the .m3u extension
-        QString playlistName = QString::fromStdString(file.filename().string());
-        playlistName.chop(4);  // Remove the .m3u extension
 
-        // Create the list item and set its data
+        QString playlistName = QString::fromStdString(file.filename().string());
+        playlistName.chop(4);  // Removing .m3u extension
+
+
         QListWidgetItem* item = new QListWidgetItem(playlistName);
         item->setData(Qt::UserRole, QString::fromStdString(file.string()));  // Store full file path as user data
         ui->playlistwidget->addItem(item);
@@ -103,11 +102,11 @@ void MainWindow::listPlaylist() {
 
 
 void MainWindow::on_playlistwidget_itemClicked(QListWidgetItem *item) {
-    // Retrieve the full file path of the selected playlist file
+
     QString playlistFilePath = item->data(Qt::UserRole).toString();
     qDebug() << "Attempting to open playlist file:" << playlistFilePath;
 
-    // Open the playlist file
+
     std::ifstream file(playlistFilePath.toStdString());
     if (!file.is_open()) {
         QMessageBox::warning(this, "Error", "Could not open playlist file: " + playlistFilePath);
@@ -115,27 +114,27 @@ void MainWindow::on_playlistwidget_itemClicked(QListWidgetItem *item) {
         return;
     }
 
-    // Clear the current list of songs in the list widget
+
     ui->listWidget->clear();
 
     std::string line;
     std::vector<fs::path> musicFiles;
 
-    // Read each line in the playlist file
+
     while (std::getline(file, line)) {
         QString qLine = QString::fromStdString(line);
 
-        // Skip comments in the playlist (lines starting with '#')
+
         if (qLine.startsWith("#")) {
             continue;
         }
 
-        // Convert the playlist line to fs::path
+
         fs::path songPath = fs::path(qLine.toStdString());
 
-        // Check if the file is a valid music file
+
         if (isMusicFile(songPath)) {
-            // Add valid music files to the list widget
+
             QFileInfo fileInfo(QString::fromStdString(songPath.string()));
             QListWidgetItem *songItem = new QListWidgetItem(fileInfo.fileName());
             songItem->setData(Qt::UserRole, QString::fromStdString(songPath.string())); // Store the full path as user data
@@ -156,7 +155,7 @@ QStringList PlaylistManager::getPlaylistNames() {
     if (fs::exists(dir)) {
         for (const auto& entry : fs::directory_iterator(dir)) {
             if (entry.path().extension() == ".m3u") {
-                // Extract the playlist name without the ".m3u" extension
+
                 QString playlistName = QString::fromStdString(entry.path().stem().string());
                 playlistNames.append(playlistName);
             }
@@ -184,49 +183,49 @@ void MainWindow::on_addtoPlaylist_clicked()
         return;
     }
 
-    // Build the playlist file path
+
     QString playlistFilePath = QDir::homePath() + "/Music/Playlists/" + playlistName + ".m3u";
 
-    // First, check if the playlist file exists and read the existing songs into a set
+
     std::ifstream playlistFile(playlistFilePath.toStdString());
     std::set<std::string> existingSongs;
 
     if (playlistFile.is_open()) {
         std::string line;
         while (std::getline(playlistFile, line)) {
-            existingSongs.insert(line);  // Insert each song path into the set for easy lookup
+            existingSongs.insert(line);
         }
-        playlistFile.close();  // Close after reading
+        playlistFile.close();
     }
 
-    // Now, open the playlist file in append mode to add new songs
+
     std::ofstream playlistFileOut(playlistFilePath.toStdString(), std::ios::app);
     if (!playlistFileOut.is_open()) {
         QMessageBox::warning(this, "Error", "Could not open playlist file for writing: " + playlistFilePath);
         return;
     }
 
-    // Add the selected songs to the playlist, but skip duplicates
-    for (auto item : selectedItems) {
-        QString songPath = item->data(Qt::UserRole).toString();  // Get the full path from the user data
 
-        // Check if the song is already in the playlist (to avoid duplicates)
+    for (auto item : selectedItems) {
+        QString songPath = item->data(Qt::UserRole).toString();
+
+
         if (existingSongs.find(songPath.toStdString()) == existingSongs.end()) {
-            // Correctly write the song path to the playlist file (convert QString to std::string)
+
             playlistFileOut << songPath.toStdString() << std::endl;
-            existingSongs.insert(songPath.toStdString());  // Add to set to track this song
+            existingSongs.insert(songPath.toStdString());
         } else {
-            // Optionally notify that this song was skipped
+
             QMessageBox::information(this, "Song Skipped", "The song is already in the playlist.");
         }
     }
 
-    playlistFileOut.close();  // Close the file after appending
+    playlistFileOut.close();
 
-    // Notify the user
+
     QMessageBox::information(this, "Songs Added", "Selected songs have been added to the playlist.");
 
-    // Optionally, you can refresh the playlist view
+
     listPlaylist();
 }
 
