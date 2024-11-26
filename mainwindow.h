@@ -40,10 +40,8 @@ private slots:
 
     void on_addplaylist_btn_clicked();
     void showPlaylistDialog();
-    void createplaylist(const QString&);
 
-    void listPlaylist();
-    QStringList getPlaylistNames();
+
     void on_playlistwidget_itemClicked(QListWidgetItem *item);
 
     void on_addtoPlaylist_clicked();
@@ -63,6 +61,7 @@ private slots:
 protected:
     void dragEnterEvent(QDragEnterEvent *event) override;
     void dropEvent(QDropEvent *event) override;
+    void listPlaylist();
 private:
     Ui::MainWindow *ui;
     QTimer *timer;
