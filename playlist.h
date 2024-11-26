@@ -1,7 +1,7 @@
 #ifndef PLAYLIST_H
 #define PLAYLIST_H
-#include "mainwindow.h"
-#define SDL_MAIN_Handled
+
+
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include <SDL_mixer.h>
@@ -21,19 +21,18 @@
 #include <QUrl>
 #include <music.h>
 
-#include <SDL.h>
-
-
-Mix_Music* music = nullptr; // Initialize music to nullptr
-Mix_Chunk* music3d=nullptr;
-int isPlaying = false; // Track play/pause state
-std::string currentSong = ""; // Track the currently playing song
-QTimer *timer = nullptr; // Timer for updating progress bar
-bool use3DSound = false;
-
 
 
 namespace fs = std::filesystem;
+
+class PlaylistManager:public MainWindow{
+public:
+    void createplaylist(const QString&);
+    QStringList getPlaylistNames();
+    void addToPlaylist();
+
+};
+
 
 bool isMusicFile(const fs::path& file) {
     std::vector<std::string> musicExtensions = {".mp3", ".wav", ".flac", ".ogg"};
@@ -41,7 +40,8 @@ bool isMusicFile(const fs::path& file) {
 }
 
 
-void MainWindow::createplaylist(const QString& playlist_name) {
+
+void PlaylistManager::createplaylist(const QString& playlist_name) {
     QString playlistDir = QDir::homePath() + "/Music/Playlists/";
     fs::path dir(playlistDir.toStdString());
 
@@ -66,6 +66,7 @@ void MainWindow::createplaylist(const QString& playlist_name) {
         QMessageBox::warning(this, "Error", "Could not create playlist file");
     }
 }
+
 
 
 void MainWindow::listPlaylist() {
@@ -147,7 +148,7 @@ void MainWindow::on_playlistwidget_itemClicked(QListWidgetItem *item) {
 
 
 
-QStringList MainWindow::getPlaylistNames() {
+QStringList PlaylistManager::getPlaylistNames() {
     QStringList playlistNames;
     QString playlistDir = QDir::homePath() + "/Music/Playlists/";
     fs::path dir(playlistDir.toStdString());
@@ -168,7 +169,7 @@ QStringList MainWindow::getPlaylistNames() {
 
 void MainWindow::on_addtoPlaylist_clicked()
 {
-    // Get the selected songs from the listWidget (music library)
+    PlaylistManager plst;
     QList<QListWidgetItem *> selectedItems = ui->listWidget->selectedItems();
     if (selectedItems.isEmpty()) {
         QMessageBox::warning(this, "No Song Selected", "Please select at least one song to add to a playlist.");
@@ -177,7 +178,7 @@ void MainWindow::on_addtoPlaylist_clicked()
 
     // Ask the user to select a playlist
     bool ok;
-    QString playlistName = QInputDialog::getItem(this, "Select Playlist", "Select a Playlist to Add Songs to:", getPlaylistNames(), 0, false, &ok);
+    QString playlistName = QInputDialog::getItem(this, "Select Playlist", "Select a Playlist to Add Songs to:", plst.getPlaylistNames(), 0, false, &ok);
     if (!ok ) {
         //QMessageBox::warning(this, "No Playlist Selected", "You must select a playlist to add songs to.");
         return;
@@ -216,7 +217,7 @@ void MainWindow::on_addtoPlaylist_clicked()
             existingSongs.insert(songPath.toStdString());  // Add to set to track this song
         } else {
             // Optionally notify that this song was skipped
-            //QMessageBox::information(this, "Song Skipped", "The song " + songPath + " is already in the playlist.");
+            QMessageBox::information(this, "Song Skipped", "The song is already in the playlist.");
         }
     }
 
@@ -228,38 +229,6 @@ void MainWindow::on_addtoPlaylist_clicked()
     // Optionally, you can refresh the playlist view
     listPlaylist();
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

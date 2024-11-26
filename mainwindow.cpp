@@ -19,33 +19,35 @@
 #include <playlist.h>
 
 
-/*Mix_Music* music = nullptr; // Initialize music to nullptr
+
+
+Mix_Music* music = nullptr;
 Mix_Chunk* music3d=nullptr;
-int isPlaying = false; // Track play/pause state
-std::string currentSong = ""; // Track the currently playing song
-QTimer *timer = nullptr; // Timer for updating progress bar
+int isPlaying = false;
+std::string currentSong = "";
+QTimer *timer = nullptr;
 bool use3DSound = false;
-*/
+
 int channel=-1;
 
 namespace fs = std::filesystem;
 
-enum PlayMode { Loop, Sequential, Shuffle }; // Define play modes
+enum PlayMode { Loop, Sequential, Shuffle };
 
-PlayMode currentMode = Sequential; // Start with Sequential Mode
-
-// Function to check if a file is a music file
+PlayMode currentMode = Sequential;
 
 
-// Function to find music files in a directory
+
+
 void findMusicFiles(const fs::path& directory, std::vector<fs::path>& musicFiles) {
     if (!fs::exists(directory) || !fs::is_directory(directory)) {
         std::cerr << "Skipping invalid or non-directory path: " << directory << std::endl;
         return;
     }
+
     try {
         for (const auto& entry : fs::recursive_directory_iterator(directory)) {
-            // Skip directories and non-music files
+
             if (fs::is_regular_file(entry) && isMusicFile(entry.path())) {
                 musicFiles.push_back(entry.path());
             }
@@ -56,29 +58,29 @@ void findMusicFiles(const fs::path& directory, std::vector<fs::path>& musicFiles
 }
 
 
-// Function to get common directories for scanning music files
+
 std::vector<fs::path> getDefaultMusicDirectories() {
     std::vector<fs::path> directories;
 
-    // Add the user's Music directory (Windows specific)
+
     QString musicPath = QStandardPaths::writableLocation(QStandardPaths::MusicLocation);
     if (!musicPath.isEmpty()) {
         directories.push_back(musicPath.toStdString());
     }
 
-    // Filter out some common system folders to avoid recursion issues
+
     QStringList excludedDirs = {"C:/Program Files", "C:/Windows", "C:/Users/Username/AppData"};
     directories.push_back(QStandardPaths::writableLocation(QStandardPaths::DesktopLocation).toStdString());
     directories.push_back(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation).toStdString());
     directories.push_back(QStandardPaths::writableLocation(QStandardPaths::DownloadLocation).toStdString());
 
-    // Exclude specific directories if needed
+
     directories.erase(std::remove_if(directories.begin(), directories.end(),
                                      [&excludedDirs](const fs::path& p) {
                                          for (const auto& excluded : excludedDirs) {
-                                             // Use find() to check if the directory starts with any excluded path
+
                                              std::string dirStr = p.string();
-                                             if (dirStr.find(excluded.toStdString()) == 0) { // Checks if the path starts with excluded directory
+                                             if (dirStr.find(excluded.toStdString()) == 0) {
                                                  return true;
                                              }
                                          }
@@ -106,18 +108,17 @@ MainWindow::MainWindow(QWidget *parent)
 
     timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &MainWindow::updateProgress);
-    //connect(ui->Progressbar, &QSlider::sliderMoved, this, &MainWindow::seekMusic);
-    connect(ui->Progressbar,  &QSlider::valueChanged, this, &MainWindow::seekMusic);
+    connect(ui->Progressbar, &QSlider::sliderMoved, this, &MainWindow::seekMusic);
     ui->volumeslider->setRange(0, MIX_MAX_VOLUME);
     ui->volumeslider->setSliderPosition(MIX_MAX_VOLUME);
-    ui->timelabel->setText("00:00"); // Set initial text for the timelabel
+    ui->timelabel->setText("00:00");
     ui->timelabel->setText("00:00");
     ui->SearchLine->setPlaceholderText("Search Songs...");
 
     connect(ui->SearchLine, &QLineEdit::textChanged, this, &MainWindow::on_searchTextChanged);
     connect(ui->sound3d, &QCheckBox::checkStateChanged, this, &MainWindow::toggle3DSound);
-    // Automatically scan common directories when the app starts
-    listfile();  // This will call listfile on startup
+
+    listfile();
     listPlaylist();
     ui->play_btn->setIcon(QIcon(":/images/icons/play4.png"));
     ui->previous->setIcon(QIcon(":/images/icons/backward.png"));
@@ -182,24 +183,24 @@ MainWindow::~MainWindow()
 
 void MainWindow::updateButtonVisibility() {
     if (ui->listWidget->selectedItems().isEmpty()) {
-        ui->addtoPlaylist->setVisible(false); // Replace yourButton with the actual button name
+        ui->addtoPlaylist->setVisible(false);
     } else {
-        ui->addtoPlaylist->setVisible(true); // Replace yourButton with the actual button name
+        ui->addtoPlaylist->setVisible(true);
     }
 }
 
 void MainWindow::updateDeletelistVisibility() {
     if (ui->playlistwidget->selectedItems().isEmpty()) {
-        ui->delPlaylist->setVisible(false); // Replace yourButton with the actual button name
+        ui->delPlaylist->setVisible(false);
     } else {
-        ui->delPlaylist->setVisible(true); // Replace yourButton with the actual button name
+        ui->delPlaylist->setVisible(true);
     }
 }
 void MainWindow::updateDeletesongVisibility() {
     if (ui->listWidget->selectedItems().isEmpty() || ui->playlistwidget->selectedItems().isEmpty()) {
-        ui->delSong->setVisible(false); // Replace yourButton with the actual button name
+        ui->delSong->setVisible(false);
     } else {
-        ui->delSong->setVisible(true); // Replace yourButton with the actual button name
+        ui->delSong->setVisible(true);
     }
 }
 
@@ -219,9 +220,10 @@ void MainWindow::toggle3DSound(int state) {
 
 void MainWindow::showPlaylistDialog() {
     bool ok;
+    PlaylistManager plst;
     QString playlistName = QInputDialog::getText(this, tr("Create Playlist"), tr("Playlist Name:"), QLineEdit::Normal, QString(), &ok);
     if (ok && !playlistName.isEmpty()) {
-        createplaylist(playlistName);
+        plst.createplaylist(playlistName);
     }
 }
 
@@ -254,8 +256,8 @@ void MainWindow::on_end_btn_clicked()
         std::cout << "Music3d file freed." << std::endl;
     }
 
-    isPlaying = false; // Reset play state
-    currentSong = ""; // Reset current song
+    isPlaying = false;
+    currentSong = "";
     ui->playing_song->setText("-_-_-_-");
     timer->stop();
     ui->Progressbar->setValue(0);
@@ -308,7 +310,7 @@ int MainWindow::play(const std::string& fullPath) {
         return 1;
     }
     std::cout << "Music loaded successfully." << std::endl;
-    int loops = (currentMode == Loop) ? -1 : 1; // -1 for loop, 1 for sequential (no loop)
+    int loops = (currentMode == Loop) ? -1 : 1;
     if(use3DSound){
         music3d = Mix_LoadWAV(fullPath.c_str());
         if (!music3d) {
@@ -316,7 +318,7 @@ int MainWindow::play(const std::string& fullPath) {
             return 1;
         }
         Mix_VolumeMusic(0);
-        channel = Mix_PlayChannel(-1, music3d, loops);  // Automatically get the first available channel
+        channel = Mix_PlayChannel(-1, music3d, loops);
         if (channel == -1) {
             std::cerr << "Failed to play sound effect: " << Mix_GetError() << std::endl;
             Mix_FreeChunk(music3d);
@@ -324,7 +326,7 @@ int MainWindow::play(const std::string& fullPath) {
         }
         std::cout << "Playing music3d..." << std::endl;
 
-        // Register the effect after the sound starts playing (for the correct channel)
+
         Mix_RegisterEffect(channel, AUD_Effects, NULL, NULL);
     }
 
@@ -337,9 +339,9 @@ int MainWindow::play(const std::string& fullPath) {
     }
 
     std::cout << "Playing music..." << std::endl;
-    isPlaying = true; // Update play state
+    isPlaying = true;
     ui->play_btn->setIcon(QIcon(":/images/icons/pause2.png"));
-    // Update progress bar
+
     double duration = Mix_MusicDuration(music);
     ui->Progressbar->setRange(0, static_cast<int>(duration));
     timer->start(1000);
@@ -354,14 +356,14 @@ void MainWindow::updateProgress()
         double currentPos = Mix_GetMusicPosition(music);
         ui->Progressbar->setValue(static_cast<int>(currentPos));
 
-        // Format the current position and total duration
+
         int currentMinutes = static_cast<int>(currentPos) / 60;
         int currentSeconds = static_cast<int>(currentPos) % 60;
         double totalDuration = Mix_MusicDuration(music);
         int totalMinutes = static_cast<int>(totalDuration) / 60;
         int totalSeconds = static_cast<int>(totalDuration) % 60;
 
-        // Update the timer label
+
         ui->timelabel->setText(QString("%1:%2")
                                    .arg(currentMinutes, 2, 10, QChar('0'))
                                    .arg(currentSeconds, 2, 10, QChar('0')));
@@ -369,22 +371,22 @@ void MainWindow::updateProgress()
         ui->end_label->setText(QString("%1:%2")
                                    .arg(totalMinutes, 2, 10, QChar('0'))
                                    .arg(totalSeconds, 2, 10, QChar('0')));
-        // Handle the end of music for sequential mode
+
         if (currentMode == Sequential && currentPos >= totalDuration){
             int nextIndex = ui->listWidget->currentRow() + 1;
 
-            // Check if we are at the last song in the list
+
             if (nextIndex >= ui->listWidget->count()) {
-                // If we are at the last song, go back to the first song
+
                 nextIndex = 0;
             }
 
-            // Play the next song in the list
+
             ui->listWidget->setCurrentRow(nextIndex);
-            on_listWidget_itemClicked(ui->listWidget->item(nextIndex)); // Play the next song
+            on_listWidget_itemClicked(ui->listWidget->item(nextIndex));
         }
         else if (currentMode == Shuffle && currentPos >= Mix_MusicDuration(music)) {
-            int randomIndex = rand() % ui->listWidget->count();  // Random index
+            int randomIndex = rand() % ui->listWidget->count();
             ui->listWidget->setCurrentRow(randomIndex);
             on_listWidget_itemClicked(ui->listWidget->item(randomIndex));
         }
@@ -401,35 +403,35 @@ void MainWindow::seekMusic(int position)
 
 void MainWindow::on_listWidget_itemClicked(QListWidgetItem *item)
 {
-    // Get the current row of the clicked item
+
     int current_row = ui->listWidget->currentRow();
 
-    // Use a static variable to keep track of the previous row
+
     static int previous_row = -1;
 
-    // Check if the clicked item is different from the previously clicked item
+
     if (previous_row != -1 && previous_row != current_row) {
-        // Un-bold the previous item (if it's not the same as the current item)
+
         QListWidgetItem *previousItem = ui->listWidget->item(previous_row);
         if (previousItem) {
             QFont font = previousItem->font();
-            font.setBold(false);  // Remove bold from the previous item
+            font.setBold(false);
             previousItem->setFont(font);
         }
     }
 
-    // Bold the current item
+
     QFont font = item->font();
-    font.setBold(true);  // Set bold to true for the current clicked item
+    font.setBold(true);
     item->setFont(font);
 
-    // Update the label to reflect the current playing song
+
     QString songPath = item->data(Qt::UserRole).toString();
     ui->playing_song->setText(item->text());
 
     std::string songPathStr = songPath.toStdString();
 
-    // If the same song is clicked again, toggle play/pause
+
     if (currentSong == songPathStr) {
         if (isPlaying) {
             Mix_PauseMusic();
@@ -438,9 +440,9 @@ void MainWindow::on_listWidget_itemClicked(QListWidgetItem *item)
             Mix_ResumeMusic();
             if(use3DSound){Mix_Resume(channel);}
         }
-        isPlaying = !isPlaying;  // Toggle the play state
+        isPlaying = !isPlaying;
     } else {
-        // If a new song is clicked, stop the current song and play the new one
+
         if (isPlaying) {
             Mix_HaltMusic();
             if (music) {
@@ -456,7 +458,7 @@ void MainWindow::on_listWidget_itemClicked(QListWidgetItem *item)
             }
         }
 
-        // Update the current song
+
         currentSong = songPathStr;
 
         if (play(songPathStr) != 0) {
@@ -464,24 +466,24 @@ void MainWindow::on_listWidget_itemClicked(QListWidgetItem *item)
         }
     }
 
-    // Set the current row as the previous row for next click
+
     previous_row = current_row;
 
-    // Set the clicked item as the current item in the list
+
     ui->listWidget->setCurrentItem(item);
 }
 
 
 void MainWindow::on_searchTextChanged(const QString &text)
 {
-    // Loop through all items in the list
+
     for (int i = 0; i < ui->listWidget->count(); ++i) {
         QListWidgetItem *item = ui->listWidget->item(i);
-        // Check if the item's text contains the search query (case-insensitive)
+
         if (item->text().contains(text, Qt::CaseInsensitive)) {
-            item->setHidden(false); // Show item if it matches
+            item->setHidden(false);
         } else {
-            item->setHidden(true);  // Hide item if it doesn't match
+            item->setHidden(true);
         }
     }
 }
@@ -490,13 +492,13 @@ void MainWindow::on_searchTextChanged(const QString &text)
 void MainWindow::listfile()
 {
     std::vector<fs::path> musicFiles;
-    std::vector<fs::path> musicDirectories = getDefaultMusicDirectories(); // Get the list of directories
+    std::vector<fs::path> musicDirectories = getDefaultMusicDirectories();
 
     for (const auto& directory : musicDirectories) {
-        findMusicFiles(directory, musicFiles); // Find music files in these directories
+        findMusicFiles(directory, musicFiles);
     }
 
-    ui->listWidget->clear(); // Clear the current list
+    ui->listWidget->clear();
     for (const auto& file : musicFiles) {
         QListWidgetItem* item = new QListWidgetItem(QString::fromStdString(file.filename().string()));
         item->setData(Qt::UserRole, QString::fromStdString(file.string()));
@@ -523,6 +525,7 @@ void MainWindow::on_volumeslider_valueChanged(int value)
     else{
         ui->sound_label->setPixmap(QPixmap(":/images/icons/volume.png"));
     }
+
     ui->volume_label->setText(QString("%1").arg((value*100)/128));
 }
 
@@ -540,7 +543,7 @@ void MainWindow::on_next_clicked()
 {
     int next = ui->listWidget->currentRow() + 1;
     if (next >= ui->listWidget->count()) {
-        // If we are at the last song, go back to the first song
+
         next = 0;
     }
     ui->listWidget->setCurrentRow(next);
@@ -554,28 +557,33 @@ void MainWindow::on_addplaylist_btn_clicked()
 }
 
 
+
+
+
+
+
 void MainWindow::on_browse_btn_clicked()
 {
-    // Open a file dialog to select a folder
+
     QString directory = QFileDialog::getExistingDirectory(this, tr("Select Music Folder"), QDir::homePath(), QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
 
-    // If the user selected a valid directory
-    if (!directory.isEmpty()) {
-        // Clear the current list
-        //ui->listWidget->clear();
 
-        // Find music files in the selected directory
+    if (!directory.isEmpty()) {
+
+        ui->listWidget->clear();
+
+
         std::vector<fs::path> musicFiles;
         findMusicFiles(directory.toStdString(), musicFiles);
 
-        // Add the music files to the list widget
+
         for (const auto& file : musicFiles) {
             QListWidgetItem* item = new QListWidgetItem(QString::fromStdString(file.filename().string()));
             item->setData(Qt::UserRole, QString::fromStdString(file.string())); // Store full path as user data
             ui->listWidget->addItem(item);
         }
 
-        // Optional: Notify the user
+
         QMessageBox::information(this, "Directory Selected", "Music files have been loaded.");
     }
 }
@@ -583,34 +591,34 @@ void MainWindow::on_browse_btn_clicked()
 
 
 
-// Override dragEnterEvent for the main window
+
 void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 {
-    // Check if the dragged data contains URLs (i.e., files)
+
     if (event->mimeData()->hasUrls()) {
-        event->acceptProposedAction();  // Accept the drag if it's a file
+        event->acceptProposedAction();
     } else {
-        event->ignore();  // Ignore the drag if it's not a file
+        event->ignore();
     }
 }
 
-// Override dropEvent for the main window
+
 void MainWindow::dropEvent(QDropEvent *event)
 {
-    // Get the list of dropped files
+
     QList<QUrl> droppedUrls = event->mimeData()->urls();
 
-    // Iterate through each dropped file
-    for (const QUrl &url : droppedUrls) {
-        QString filePath = url.toLocalFile();  // Get the file path from the URL
 
-        // Ensure the dropped file is a valid music file
+    for (const QUrl &url : droppedUrls) {
+        QString filePath = url.toLocalFile();
+
+
         if (isMusicFile(fs::path(filePath.toStdString()))) {
-            // Process the file (add to listWidget, etc.)
+
             QFileInfo fileInfo(filePath);
             QListWidgetItem *item = new QListWidgetItem(fileInfo.fileName());
-            item->setData(Qt::UserRole, filePath);  // Store the full file path as user data
-            ui->listWidget->addItem(item);  // Add the file to the list widget
+            item->setData(Qt::UserRole, filePath);
+            ui->listWidget->addItem(item);
             on_listWidget_itemClicked(item);
         }
     }
@@ -620,76 +628,74 @@ void MainWindow::dropEvent(QDropEvent *event)
 
 void MainWindow::on_delSong_clicked()
 {
-    // Get the playlist name from the UI.
+
     QString playlist_name = ui->playlistwidget->currentItem()->text();
 
-    // Construct the full file path for the playlist.
+
     QString playlistfile = QDir::homePath() + "/Music/Playlists/" + playlist_name + ".m3u";
 
-    // Get the song path from the UI, assuming the song's path is stored in the UserRole data.
+
     QString songPath = ui->listWidget->currentItem()->data(Qt::UserRole).toString();
 
-    // Open the playlist file for reading
+
     std::ifstream file(playlistfile.toStdString());
     if (!file.is_open()) {
         QMessageBox::critical(this, "Error", "Failed to open the playlist file for reading.");
         return;
     }
 
-    // Read the entire content of the playlist file into a vector of strings
+
     std::vector<std::string> lines;
     std::string line;
     while (std::getline(file, line)) {
-        lines.push_back(line);  // Read each line into the vector
+        lines.push_back(line);
     }
     file.close();
 
-    // Find and remove the song path from the playlist
+
     auto it = std::find(lines.begin(), lines.end(), songPath.toStdString());
     if (it != lines.end()) {
-        lines.erase(it);  // Remove the song path from the vector
+        lines.erase(it);
     } else {
         QMessageBox::information(this, "Song Not Found", "The song is not in the playlist.");
         return;
     }
 
-    // Open the playlist file for writing
+
     std::ofstream outFile(playlistfile.toStdString());
     if (!outFile.is_open()) {
         QMessageBox::critical(this, "Error", "Failed to open the playlist file for writing.");
         return;
     }
 
-    // Write the updated content back to the playlist file
+
     for (const auto& updatedLine : lines) {
-        outFile << updatedLine << std::endl;  // Write each line to the file
+        outFile << updatedLine << std::endl;
     }
     outFile.close();
 
     on_playlistwidget_itemClicked(ui->playlistwidget->currentItem());
     QMessageBox::information(this, "Success", "Song removed from playlist.");
-
-    // Optionally, refresh the playlist display or update the UI
-    // listPlaylist();
+    listPlaylist();
 }
 
 
 
 
 void MainWindow::on_delPlaylist_clicked()   {
-    // Get the playlist name from the UI.
+
     QString playlist_name = ui->playlistwidget->currentItem()->text();
 
-    // Construct the full file path.
+
     QString playlistfile = QDir::homePath() + "/Music/Playlists/" + playlist_name + ".m3u";
 
-    // Convert to std::string for std::remove
+
     std::string filePath = playlistfile.toStdString();
 
-    // Check if the file exists before attempting to delete
+
     QFile file(QString::fromStdString(filePath));
     if (file.exists()) {
-        // Attempt to delete the file.
+
         if (std::remove(filePath.c_str()) == 0) {
             listPlaylist();
             QMessageBox::information(this, "Success", "Playlist deleted successfully.");
