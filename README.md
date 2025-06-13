@@ -33,7 +33,7 @@ Make sure you have the following installed:
 
 ## ⚙️ Build Instructions
 
-### Linux / macOS
+### Windows / Linux / macOS
 
 ```bash
 # Clone the repo
